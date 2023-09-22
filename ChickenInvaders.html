@@ -1,0 +1,417 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title> Chicken Invaders</title>
+    <link rel="stylesheet" href="StyleSheet.css" />
+</head>
+<body>
+    <h1 id="gameOver" style="color: red"></h1>
+    <h1 id="win" style="color: green"></h1>
+    <canvas id="canvas" width="900" height="600"></canvas>
+    <script src="sprites/rocket.js"></script>
+    <script src="sprites/laser.js"></script>
+    <script src="sprites/egg.js"></script>
+    <script src="sprites/chicken.js"></script>
+    <script src="classes/keycode.js"></script>
+    <script src="classes/vector.js"></script>
+    <script src="classes/acceleration.js"></script>
+    <script src="classes/collision.js"></script>
+    <script src="classes/collection.js"></script>
+    <script src="sprites/star.js"></script>
+
+    <script>
+        //this function will always be executed when the page loads
+        window.onload = function () {
+            //create a reference to the canvas
+            var canvas = document.getElementById('canvas'),
+                //access the 2D drawing API
+                context = canvas.getContext('2d'),
+                //new instance of the Saucer class
+                ship = new Rocket(),
+                //new instance of the laser class
+                laser = new Laser(),
+                //new instance of the egg class
+                egg = new Egg(),
+                //new instance of the chicken class
+                chicken = new Chicken(),
+                // new instance of the vector class
+                vectorLeft = new Vector(180, 6),
+                // new instance of vector going right direction
+                vectorRight = new Vector(360, 6),
+                acceleration = new Accelerate(.001),
+                //create a new instance of the collision detection class
+                collision = new Collision(),
+                // create the star collection
+                stars = new Collection(),
+                // set the number of stars to display
+                StarCount = 90;
+
+            //function to handle keyboard events
+            function KeyboardEventHandler(event) {
+                // InitLaser(event) will not work without this. The boolean value makes no difference
+                InitLaser(event) == true;
+                //if the up arrow is pressed
+                if (event.keyCode == keycode.UP) {
+                    acceleration.VThrust(.01);
+                }
+                //if the left arrow is pressed
+                if (event.keyCode == keycode.LEFT) {
+                    console.log("left arrow key is pressed");
+                    //acceleration.HThrust(.01);
+                    ship.setVector(vectorLeft);
+                }
+                //if the right arrow is pressed
+                if (event.keyCode == keycode.RIGHT) {
+                    acceleration.HThrust(-.01);
+                    ship.setVector(vectorRight);
+                }
+                //if the down arrow is pressed
+                if (event.keyCode == keycode.DOWN) {
+                    console.log("down arrow key pressed");
+                    acceleration.Halt(); // Matthew's code. Does nothing
+                    acceleration.VThrust(-.01); // makes the ship move down
+                }
+            }
+
+            // instance of laser collection
+            var lasers = new Collection();
+            var hitLaser = false;
+            function InitLaser(event) {
+                // if the space bar is pressed
+                if (event.keyCode == keycode.SPACE) {
+                    console.log("space bar is pressed");
+                    // set the postion of the lasers relative to the ship
+                    laser = new Laser(ship.x, ship.y - 73, hitLaser);
+                    lasers.add(laser);
+                    //lasers.item(0).draw(context);
+                    //lasers.item(0).move();
+                }
+            }
+
+            // function for drawing the lasers
+            function DrawLasers() {
+                var count = 0;
+                while (count < lasers.count) {
+                    lasers.item(count).draw(context);
+                    count++;
+                }
+            }
+
+            // function for firing the lasers
+            function MoveLasers() {
+                var count = 0;
+                // whiel count is less than number of lasers
+                while (count < lasers.count) {
+                    // move(fire) each laser
+                    lasers.item(count).move();
+                    count++;
+                }
+            }
+
+            //used to initialise the collection
+            function InitStars() {
+                //var for loop counter
+                var count = 0
+                //wile counter less than star count
+                while (count < StarCount) {
+                    //create a new star
+                    star = new Star();
+                    //add the star to the collection
+                    stars.add(star);
+                    //inc the counter
+                    count++;
+                }
+            }
+
+            // create the chicken collection
+            var chickens = new Collection(),
+                // create the egg collection
+                eggs = new Collection(),
+                // set the number of chickens to display
+                chickenCount = 6;
+
+            // how many rows of chickens do I want
+            var row = 2,
+                rowCount = 0,
+                // starting y position of the first row of chickens
+                y = 42;
+            // initialise the chicken collection
+            function InitChicken() {
+
+                while (rowCount < row) {
+                    for (var count = 0; count < chickenCount; count++) {
+                        // x positions of each chickens
+                        x = count * 130;
+                        // give a chicken a random time
+                        var temp = Math.random() * 5, // raw time
+                            randomTime = Math.floor(temp), // whole number value of raw time
+                            // dropped eggs = 1. Undropped eggs = 0.
+                            dropped = false,
+                            chicken = new Chicken(x + 95, y);
+                        // set the posn of the egg relative to the chicken
+                        egg = new Egg(chicken.x, chicken.y - 6, randomTime, dropped);
+                        // add egg to the egg collection
+                        eggs.add(egg);
+                        // add chicken to chicken collection
+                        chickens.add(chicken);
+                    }
+                    // increment rowCount by 1
+                    rowCount++;
+                    // add 60 to y for the next row of chickens
+                    y += 60;
+                }
+            }
+
+            // initialise the egg collection
+            function InitEgg() {
+                while (rowCount < row) {
+
+                }
+            }
+
+            InitChicken();
+
+            // draw the chickens
+            function DrawChickens() {
+                for (var count = 0; count < chickens.count; count++) {
+                    // draw each chicken
+                    chickens.item(count).draw(context);
+                }
+            }
+
+            // draw the eggs
+            function DrawEggs() {
+                for (var count = 0; count < eggs.count; count++) {
+                    // draw each egg
+                    eggs.item(count).draw(context);
+                }
+            }
+
+            // variable to check when the chicken has reached the end of canvas. Youtube: https://youtu.be/biN3v3ef-Y0 33:50 - 36:33
+            var edge = false;
+            // move the chickens
+            function MoveChickens() {
+                var count = 0;
+                while (count < chickens.count) {
+                    chickens.item(count).move();
+                    // move the eggs with the chickens
+                    eggs.item(count).move();
+                    // if the chickens have reached the edge of the canvas
+                    if ((chickens.item(count).x + chickens.item(count).chickenWidth) > 900 || (chickens.item(count).x - chickens.item(count).chickenWidth) < 0) {
+                        edge = true;
+                    }
+                    // increment count by 1
+                    count++;
+                }
+                // invoke the change direction method
+                MoveSideToSide();
+            }
+
+            // egg vy
+            var eggVy = 2;
+            //function to drop eggs
+            function DropEggs() {
+                // variable to hold the random time to check with eggs random time
+                // increase/decrease this to alter the rate the eggs fall
+                var randoTime = Math.random() * 100,
+                    // get the integer of randoTime
+                    temp = Math.floor(randoTime),
+                    count = 0;
+                // for each egg
+                for (var count = 0; count < eggs.count; count++) {
+                    // if the eggs random time = temp
+                    if (eggs.item(count).randTime == temp) {
+                        // stop following chicken
+                        eggs.item(count).vx = 0;
+                        // drop the egg
+                        eggs.item(count).vy = eggVy;
+                        // dropped eggs = 1. Undropped eggs = 0.
+                        // change the dropped status to 1
+                        eggs.item(count).dropped = true;
+                    }
+                }
+            }
+
+
+            // function to make chickens change direction when it reaches end of canvas
+            function MoveSideToSide() {
+                // if edge is true
+                if (edge) {
+                    var count = 0;
+                    while (count < chickens.count) {
+                        // change the direction
+                        chickens.item(count).sideToSide();
+                        // if the egg has not been dropped
+                        if (eggs.item(count).dropped == false) {
+                            // give the eggs the same velocity as the chickens ie continue to follow the chickens
+                            eggs.item(count).vx = chickens.item(count).vx;
+                            //eggs.item(count).sideToSide();
+                        }
+                        count++;
+                    }
+                }
+                // change edge back to false
+                edge = false;
+            }
+
+            //initialise the lasers collection
+            InitStars();
+
+            //used to draw the stars collection
+            function DrawStars() {
+                //var for loop counter
+                var count = 0
+                //wile counter less than star count
+                while (count < StarCount) {
+                    //draw star at index
+                    stars.item(count).draw(context);
+                    //inc the counter
+                    count++;
+                }
+            }
+
+            // stop the ship moving when arrow key released
+            function HaltShip(event) {
+                if (event.keyCode == keycode.LEFT || event.keyCode == keycode.RIGHT) {
+                    ship.halt();
+                }
+            }
+
+            //used to move the stars
+            function MoveStars() {
+                //var for loop counter
+                var count = 0
+                //wile counter less than star count
+                while (count < StarCount) {
+                    //move the star at the index
+                    stars.item(count).move();
+                    //increase the counter
+                    count++;
+                }
+            }
+
+            //add a listener for the keydown event
+            window.addEventListener('keydown', KeyboardEventHandler, false);
+            window.addEventListener('Keydown', InitLaser, false);
+            window.addEventListener('keyup', HaltShip, false);
+
+            (function drawFrame() {
+                //clear the canvas for the new frame
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                // draw the lasers
+                DrawLasers();
+
+                // Move the lasers
+                MoveLasers();
+
+                //move the rocket
+                ship.move();
+
+                // call DropEggs()
+                DropEggs();
+
+                // draw the stars
+                DrawStars();
+
+                //draw the rocket
+                ship.draw(context);
+
+                // move the stars
+                MoveStars();
+
+                laser.laserColour(context);
+                // Draw the eggs
+                DrawEggs();
+
+                // Draw the chickens
+                DrawChickens();
+
+                // move the chickens
+                MoveChickens();
+
+                //get the next animation frame
+                window.requestAnimationFrame(drawFrame);
+
+                // check to see if there is a collision or not
+                //for (count = 0; count < eggs.count; count++) {
+                //    if (collision.Overlapping(eggs.item(count), ship)) {
+                //        //alert that a collision has taken place
+                //        // stop the ship
+                //        ship.halt();
+                //        // remove the vectors acting on the ship
+                //        vectorLeft = new Vector(180, 0);
+                //        vectorRight = new Vector(360, 0);
+                //        for (count = 0; count < chickens.count; count++) {
+                //            chickens.item(count).vx = 0;
+                //            eggs.item(count).vx = 0;
+                //            eggs.item(count).vy = 0;
+                //        }
+                //        document.getElementById('gameOver').innerHTML = "Game Over. Refresh to play again! P.S. Space bar = fire & left/right arrows to move ";
+                //    }
+                //}
+
+                // check to see if there is a collision or not
+                // for each laser
+                //for (count = 0; count < lasers.count; count++) {
+                //    // for each chicken
+                //    for (countL = 0; countL < chickens.count; countL++) {
+                //        if (collision.Overlapping(lasers.item(count), chickens.item(countL))) {
+                //            //alert that a collision has taken place
+                //            var hitChicken = chickens.count;
+                //            // remove the last chickens. In index
+                //            chickens.remove(11);
+                //            for (var count = 0; count < eggs.count; count++) {
+                //                if (eggs.item(count).dropped == 0) {
+                //                    eggs.remove(11);
+                //                }
+                //                else {
+                //                    eggs.item(count).vy = eggVy;
+                //                }
+                //            }
+                //        }
+                //        if (chickens.count == 0) {
+                //            document.getElementById('win').innerHTML = "Congratulations!! You won! P.S. Space bar = fire & left/right arrows to move";
+                //        }
+                //    }
+                //}
+
+                // check to see if there is a collision or not
+                // for each laser
+                for (count = 0; count < lasers.count; count++) {
+                    // for each chicken
+                    for (countL = 0; countL < chickens.count; countL++) {
+                        if (collision.Overlapping(lasers.item(count), chickens.item(countL))) {
+                            //alert that a collision has taken place
+                            lasers.item(countL).hit();
+                            var hitChicken = chickens.count;
+                            // remove the last chickens. In index (count = 12. index starts from 0[so 11])
+                            chickens.remove(11);
+                            for (var i = lasers.count - 1; i <= 0; i--) {
+                                if (lasers.item(i).hitLaser = true) {
+                                    lasers.remove(i);
+                                }
+                            }
+                            //for (var count = 0; count < eggs.count; count++) {
+                            //    if (eggs.item(count).dropped == 0) {
+                            //        eggs.remove(11);
+                            //    }
+                            //    else {
+                            //        eggs.item(count).vy = eggVy;
+                            //    }
+                            //}
+                        }
+                        if (chickens.count == 0) {
+                            document.getElementById('win').innerHTML = "Congratulations!! You won! P.S. Space bar = fire & left/right arrows to move";
+                        }
+                    }
+                }
+
+                
+
+            })();
+        }
+    </script>
+</body>
+</html>

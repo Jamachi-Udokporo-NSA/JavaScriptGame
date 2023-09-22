@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link rel="stylesheet" href="StyleSheet.css" />
+</head>
+<body>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <script src="sprites/square.js"></script>
+    <script>
+        //this function will always be executed when the page loads
+        window.onload = function () {
+            //our code here
+            //create a reference to the canvas
+            var canvas = document.getElementById('canvas'),
+                //access the 2D drawing API
+                context = canvas.getContext('2d'),
+                //var for x coordinate of the square
+                x = 0,
+                //var for y coordinate of the square
+                y = 0,
+                //new instance of the square
+                square = new Square();
+
+
+            //call the drawFrame function
+            //drawFrame();
+
+            (function drawFrame() {
+                //clear the canvas for the new frame
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                //draw the sprite
+                square.draw(context);
+                //move the square to the right
+                square.move();
+                //get the next animation frame
+                window.requestAnimationFrame(drawFrame);
+            })();
+
+            //this function draws our sprite
+            //function draw() {
+            //    //start the line (path)
+            //    context.beginPath();
+            //    //set the start coordinates
+            //    context.moveTo(x, y);
+            //    //draw the top line
+            //    context.lineTo(x + 29, y);
+            //    //draw the right side
+            //    context.lineTo(x + 29, y + 29);
+            //    //draw the bottom line
+            //    context.lineTo(x, y + 29);
+            //    //close the path
+            //    context.closePath();
+            //    //fill the shape
+            //    context.fill();
+            //    //go ahead and draw the line
+            //    context.stroke();
+            //}
+
+
+        }
+
+    </script>
+</body>
+</html>
